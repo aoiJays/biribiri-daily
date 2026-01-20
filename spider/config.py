@@ -22,3 +22,29 @@ ZHIHU_LIST = [
     }
 ]
 
+WECHAT_LIST = [
+    {   
+        "title": "5E",
+        "wxid": "cn5eplay",
+        "KEY_WORD": ["CS晚报"], 
+        "CATEGORY": "CS"
+    },
+    {   
+        "title": "动感光波发射基地",
+        "wxid": "gh_1a3b4a5c4888",
+        "KEY_WORD": ["每日动漫资讯"], 
+        "CATEGORY": "动漫"
+    },
+    {   
+        "title": "科技荐闻",
+        "wxid": "ITechNews",
+        "KEY_WORD": ["世界早报", "商业早报", "美国早报", "科技早报", "科学早报", "体育早报"],
+        "CATEGORY": "新闻",
+    },
+    {
+        "title": "一个普通的F1粉丝",
+        "wxid": "formula-one-Box",
+        "KEY_WORD": "F1新闻晨报", 
+        "CATEGORY": "F1"
+    }
+]

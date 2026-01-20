@@ -1,8 +1,9 @@
-import argparse
 import re
 from html.parser import HTMLParser
-from pathlib import Path
+from ..config import SOURCE_URL, API_TOKEN, WECHAT_LIST
+from datetime import datetime, timedelta, timezone
 
+DEBUG = False
 import requests
 
 
@@ -238,11 +239,6 @@ class _WechatArticleParser(HTMLParser):
         return " ".join(self.time_parts).strip()
 
 
-def _sanitize_filename(name):
-    safe = re.sub(r'[\\/:*?"<>|]+', "_", name)
-    safe = re.sub(r"\s+", " ", safe).strip()
-    return safe or "wechat_article"
-
 
 def fetch_wechat_article(url, timeout=15):
     headers = {
@@ -279,29 +275,126 @@ def parse_wechat_article(html, url):
     return f"{header}{body}".strip(), title
 
 
-def main():
-    parser = argparse.ArgumentParser(description="抓取微信公众号文章并输出 Markdown")
-    parser.add_argument("url", help="微信公众号文章 URL")
-    parser.add_argument(
-        "-o",
-        "--output-dir",
-        default="spider/wechat/output",
-        help="输出目录",
-    )
-    parser.add_argument("--timeout", type=int, default=15, help="请求超时(秒)")
-    args = parser.parse_args()
+def get_title_markdown(url, timeout=15):
+    html = fetch_wechat_article(url, timeout=timeout)
+    markdown, title = parse_wechat_article(html, url)
+    return title, markdown
 
-    html = fetch_wechat_article(args.url, timeout=args.timeout)
-    markdown, title = parse_wechat_article(html, args.url)
 
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    filename = _sanitize_filename(title) + ".md"
-    output_path = output_dir / filename
-    output_path.write_text(markdown, encoding="utf-8")
-    print(f"[ok] 已保存: {output_path}")
 
-    print(markdown)
+def fetch_wechat_user_articles(item):
+
+    if DEBUG:
+        with open("example/wechat/cn5eplay.json", "r", encoding="utf-8") as f:
+            import json
+            return json.load(f)
+        
+    try:
+
+        wxid = item.get("wxid", "")
+        if not wxid:
+            print("[fetch_wechat_user_articles]缺少wxid")
+            return None
+
+
+        url = f"{SOURCE_URL}/api/weixin/get-user-post/v1?token={API_TOKEN}&wxid={wxid}"
+        response = requests.get(url)
+        
+        # 检查响应状态码
+        response.raise_for_status()
+        
+        # 返回 JSON 数据
+        return response.json()
+        
+    except requests.exceptions.RequestException as e:
+        print(f"[fetch_zhihu_column_articles]请求发生错误: {e}")
+        return None
+    
+def check_item_keyword(item, title):
+    for keyword in item.get("KEY_WORD",[]):
+        if keyword.lower() in title.lower():
+            return True
+    return False
+
+
+def parse_wechat_user_articles(item, data):
+
+    results = []
+
+    if not data:
+        return results
+    
+    article_list = data.get("data", {}).get("data", [])
+    if not article_list:
+        return results
+
+    for article in article_list:
+        
+        article_time = article.get("time", 0)
+        publish_datetime = datetime.fromtimestamp(article_time, tz=timezone(timedelta(hours=8)))
+        now_datetime = datetime.now(tz=timezone(timedelta(hours=8)))
+        
+        # 差距超过24h
+        if (now_datetime - publish_datetime) > timedelta(days=1):
+            print(f"[parse_wechat_user_articles] 文章过期 skipped")
+            break
+        
+        # 同时发布的多篇文章
+        articles = article.get('articles', [])
+        for art in articles:
+            try:
+                title = art['title']
+                url = art['url']
+                
+                # 检查文章关键词
+                if not check_item_keyword(item, title):
+                    print(f"[parse_wechat_user_articles] 关键词不匹配 skipped {title}")
+                    continue
+                
+                results.append({
+                    "title": title,
+                    "url": url,
+                    "CATEGORY": item.get("CATEGORY", "未分类"),
+                })
+
+            except Exception as e:
+                print(f"[parse_wechat_user_articles] 解析列表错误 {e}")
+                continue
+
+    return results
 
 if __name__ == "__main__":
-    main()
+
+    final_articles = []
+    for item in WECHAT_LIST:
+        print(f"[main] 开始处理公众号: {item.get('title','未知公众号')}")
+        data = fetch_wechat_user_articles(item)
+        print("[main] 数据获取完成，开始解析文章列表...")
+        articles = parse_wechat_user_articles(item, data)
+        final_articles.extend(articles)
+        print("[main] 文章列表解析完成。")
+
+    print(f"[main] 共获取到 {len(final_articles)} 篇文章")
+    print('Start saving articles...')
+
+    for article in final_articles:
+        print("-" * 40)
+        print(f"Title: {article['title']}")
+        print(f"URL: {article['url']}")
+        print(f"Category: {article['CATEGORY']}")
+        print("-" * 40)
+        try:
+            title, markdown = get_title_markdown(article['url'])
+            category = article.get("CATEGORY", "未分类")
+
+            title = re.sub(r'[\\/*?:"<>|]', "", title)
+            
+            with open(f"output/md/{category}_wechat_{title}.md", "w", encoding="utf-8") as f:
+                f.write(markdown)
+            print(f"[main] 文章内容已保存: output/md/{category}_wechat_{title}.md")
+        except Exception as e:
+            print(f"[main] 获取保存文章内容失败 {e}")
+            continue
+
+    print('All articles have been processed.')
+

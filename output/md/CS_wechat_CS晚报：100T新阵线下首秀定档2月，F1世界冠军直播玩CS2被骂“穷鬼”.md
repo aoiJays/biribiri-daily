@@ -1,5 +1,5 @@
 # CS晚报：100T新阵线下首秀定档2月，F1世界冠军直播玩CS2被骂“穷鬼”
-5EPlay - https://mp.weixin.qq.com/s/iFNdkxJAtgAf042sbo-AUw
+5EPlay - http://mp.weixin.qq.com/s?__biz=MjM5MDcwNjQ4Mw==&mid=2652500024&idx=1&sn=327ebca95dd6be0f735b21654be455fc&chksm=bc4b20c2a133ba883fddcac4cb4e3549be699417d6896a6783325c66aba436282cf762e9d7bb&scene=126&sessionid=0#rd
 ![](https://mmbiz.qpic.cn/mmbiz_png/icQu3HMBm56uXesr8J9LJA4MjickzsYiatwmVv1Lwo8gBW5rq6Eibcx8C018Uug87KGFDgovMWeqAPVo0YA8oHrInA/640?wx_fmt=png&from=appmsg)
 
 **100T新阵线下首秀定档2月**
