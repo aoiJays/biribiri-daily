@@ -1,0 +1,28 @@
+name: Fetch WeChat Article
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "WeChat article URL"
+        required: true
+        type: string
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip requests
+
+      - name: Fetch article
+        run: python spider/wechat/article.py "${{ inputs.url }}"
+
