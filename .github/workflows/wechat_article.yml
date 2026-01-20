@@ -7,6 +7,10 @@ on:
         description: "WeChat article URL"
         required: true
         type: string
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
   fetch:
@@ -24,5 +28,9 @@ jobs:
         run: python -m pip install --upgrade pip requests
 
       - name: Fetch article
-        run: python spider/wechat/article.py "${{ inputs.url }}"
-
+        run: |
+          if [ -n "${{ inputs.url }}" ]; then
+            python spider/wechat/article.py "${{ inputs.url }}"
+          else
+            python spider/wechat/article.py "https://mp.weixin.qq.com/s/iFNdkxJAtgAf042sbo-AUw"
+          fi
