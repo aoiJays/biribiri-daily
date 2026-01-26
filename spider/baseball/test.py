@@ -210,26 +210,27 @@ def llm_rewrite(results):
 """
 
 
-    try:
+    for i in range(3):
+        try:
 
-        api_key = os.getenv("DEEPSEEK_API_KEY")
-        if not api_key:
-            raise RuntimeError("缺少环境变量 DEEPSEEK_API_KEY")
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            if not api_key:
+                raise RuntimeError("缺少环境变量 DEEPSEEK_API_KEY")
 
-        client = OpenAI(
-            api_key=api_key,
-            base_url=os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/v1"),
-        )
+            client = OpenAI(
+                api_key=api_key,
+                base_url=os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/v1"),
+            )
 
-        resp = client.chat.completions.create(
-            model="deepseek-reasoner",
-            messages=[{"role": "user", "content": PROMPT}],
-            temperature=0.7,
-        )
-        return resp.choices[0].message.content
-    except Exception as e:
-        print(f"调用 LLM 出错: {e}")
-        return ""
+            resp = client.chat.completions.create(
+                model="deepseek-reasoner",
+                messages=[{"role": "user", "content": PROMPT}],
+                temperature=0.7,
+            )
+            return resp.choices[0].message.content
+        except Exception as e:
+            print(f"[retry {i}/3]调用 LLM 出错: {e}")
+            if i == 2: return f"调用 LLM 出错: {e}"
     
 
 if __name__ == "__main__":
@@ -242,8 +243,8 @@ if __name__ == "__main__":
     else:
         results = fetch_recent_news_within_24h()
 
-    # format_results = llm_rewrite(results)
+    format_results = llm_rewrite(results)
 
-    # with open('output/md/baseball_news_report.md', 'w', encoding='utf-8') as f:
-    #     f.write(format_results)
+    with open('output/md/baseball_news_report.md', 'w', encoding='utf-8') as f:
+        f.write(format_results)
 
